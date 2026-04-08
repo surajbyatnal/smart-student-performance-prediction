@@ -1,0 +1,1043 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>EduSense — Student Performance Predictor</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #080c14;
+    --bg2: #0d1421;
+    --bg3: #111826;
+    --surface: #161f2e;
+    --surface2: #1c2840;
+    --border: rgba(255,255,255,0.07);
+    --border2: rgba(255,255,255,0.12);
+    --accent: #00e5b0;
+    --accent2: #00b8ff;
+    --danger: #ff4d6d;
+    --warn: #ffb627;
+    --text: #e8edf5;
+    --muted: #6b7a96;
+    --font-display: 'Bebas Neue', sans-serif;
+    --font-body: 'DM Sans', sans-serif;
+    --font-mono: 'DM Mono', monospace;
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: 15px;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── GRID OVERLAY ── */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image:
+      linear-gradient(rgba(0,229,176,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,229,176,0.03) 1px, transparent 1px);
+    background-size: 48px 48px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ── AMBIENT GLOW ── */
+  .glow-orb {
+    position: fixed;
+    border-radius: 50%;
+    filter: blur(120px);
+    pointer-events: none;
+    z-index: 0;
+  }
+  .glow-orb.g1 { width: 600px; height: 600px; background: rgba(0,229,176,0.06); top: -200px; left: -150px; }
+  .glow-orb.g2 { width: 500px; height: 500px; background: rgba(0,184,255,0.05); bottom: -100px; right: -100px; }
+
+  /* ── LAYOUT ── */
+  .page { position: relative; z-index: 1; }
+
+  /* ── NAVBAR ── */
+  nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.25rem 2.5rem;
+    border-bottom: 1px solid var(--border);
+    backdrop-filter: blur(12px);
+    position: sticky; top: 0;
+    background: rgba(8,12,20,0.85);
+    z-index: 100;
+  }
+
+  .nav-logo {
+    display: flex; align-items: center; gap: 10px;
+  }
+
+  .logo-mark {
+    width: 34px; height: 34px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  .logo-mark svg { width: 18px; height: 18px; fill: #080c14; }
+
+  .logo-text {
+    font-family: var(--font-display);
+    font-size: 1.5rem;
+    letter-spacing: 2px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .nav-chip {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    padding: 4px 10px;
+    border: 1px solid rgba(0,229,176,0.3);
+    border-radius: 99px;
+    color: var(--accent);
+    letter-spacing: 1px;
+  }
+
+  .nav-right { display: flex; align-items: center; gap: 16px; }
+
+  /* ── HERO ── */
+  .hero {
+    padding: 5rem 2.5rem 3rem;
+    max-width: 1100px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 3rem;
+    align-items: center;
+  }
+
+  .hero-eyebrow {
+    display: flex; align-items: center; gap: 8px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--accent);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 1.25rem;
+  }
+
+  .eyebrow-dot {
+    width: 6px; height: 6px;
+    background: var(--accent);
+    border-radius: 50%;
+    animation: pulse 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%,100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.4; transform: scale(0.7); }
+  }
+
+  .hero-title {
+    font-family: var(--font-display);
+    font-size: clamp(3rem, 6vw, 5.5rem);
+    line-height: 0.95;
+    letter-spacing: 3px;
+    margin-bottom: 1.5rem;
+  }
+
+  .hero-title .line1 { display: block; color: var(--text); }
+  .hero-title .line2 { display: block; color: var(--accent); }
+  .hero-title .line3 { display: block; color: var(--muted); }
+
+  .hero-desc {
+    font-size: 15px;
+    line-height: 1.8;
+    color: var(--muted);
+    max-width: 400px;
+    margin-bottom: 2rem;
+  }
+
+  .hero-stats {
+    display: flex; gap: 2rem;
+  }
+
+  .stat-item { display: flex; flex-direction: column; gap: 2px; }
+
+  .stat-num {
+    font-family: var(--font-display);
+    font-size: 2rem;
+    letter-spacing: 1px;
+    color: var(--accent);
+  }
+
+  .stat-lbl {
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  /* ── HERO VISUAL ── */
+  .hero-visual {
+    position: relative;
+    height: 300px;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  .tree-svg { width: 100%; max-width: 380px; }
+
+  /* ── MAIN CONTAINER ── */
+  .main-wrap {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 2.5rem 5rem;
+    display: grid;
+    grid-template-columns: 1fr 380px;
+    gap: 2rem;
+    align-items: start;
+  }
+
+  /* ── SECTION HEADER ── */
+  .section-head {
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 1.5rem;
+  }
+
+  .section-num {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--accent);
+    border: 1px solid rgba(0,229,176,0.25);
+    padding: 2px 7px;
+    border-radius: 4px;
+  }
+
+  .section-title {
+    font-family: var(--font-display);
+    font-size: 1.4rem;
+    letter-spacing: 2px;
+    color: var(--text);
+  }
+
+  /* ── INPUT CARD ── */
+  .input-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 2rem;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .input-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2), transparent);
+  }
+
+  .field-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem 2rem;
+  }
+
+  .field { display: flex; flex-direction: column; gap: 8px; }
+  .field.full { grid-column: 1 / -1; }
+
+  .field-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--muted);
+    display: flex; align-items: center; gap: 6px;
+  }
+
+  .field-label .lbl-icon {
+    width: 4px; height: 14px;
+    background: var(--accent);
+    border-radius: 2px;
+  }
+
+  .input-row { position: relative; }
+
+  .range-input {
+    -webkit-appearance: none;
+    width: 100%;
+    height: 4px;
+    background: var(--surface2);
+    border-radius: 99px;
+    outline: none;
+    cursor: pointer;
+  }
+
+  .range-input::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 18px; height: 18px;
+    background: var(--accent);
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 0 10px rgba(0,229,176,0.5);
+    transition: box-shadow 0.2s;
+  }
+
+  .range-input:hover::-webkit-slider-thumb {
+    box-shadow: 0 0 20px rgba(0,229,176,0.8);
+  }
+
+  .range-row {
+    display: flex; align-items: center; gap: 12px;
+  }
+
+  .range-val {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--accent);
+    min-width: 42px;
+    text-align: right;
+    background: rgba(0,229,176,0.08);
+    border: 1px solid rgba(0,229,176,0.2);
+    border-radius: 6px;
+    padding: 3px 8px;
+  }
+
+  .range-meta {
+    display: flex;
+    justify-content: space-between;
+    font-size: 10px;
+    color: var(--muted);
+    margin-top: 4px;
+    font-family: var(--font-mono);
+  }
+
+  select.field-select {
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    border-radius: 8px;
+    color: var(--text);
+    padding: 10px 14px;
+    font-size: 14px;
+    font-family: var(--font-body);
+    outline: none;
+    cursor: pointer;
+    width: 100%;
+    transition: border-color 0.2s;
+  }
+
+  select.field-select:focus { border-color: var(--accent); }
+
+  /* ── PREDICT BUTTON ── */
+  .predict-btn {
+    width: 100%;
+    margin-top: 2rem;
+    padding: 16px;
+    background: linear-gradient(135deg, var(--accent), #00c49a);
+    border: none;
+    border-radius: 10px;
+    font-family: var(--font-display);
+    font-size: 1.3rem;
+    letter-spacing: 3px;
+    color: #080c14;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.15s, box-shadow 0.2s;
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+  }
+
+  .predict-btn::after {
+    content: '';
+    position: absolute; inset: 0;
+    background: linear-gradient(135deg, rgba(255,255,255,0.15), transparent);
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+
+  .predict-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 32px rgba(0,229,176,0.35); }
+  .predict-btn:hover::after { opacity: 1; }
+  .predict-btn:active { transform: translateY(0); }
+  .predict-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+  .btn-spinner {
+    width: 18px; height: 18px;
+    border: 2px solid rgba(8,12,20,0.3);
+    border-top-color: #080c14;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    display: none;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── SIDEBAR ── */
+  .sidebar { display: flex; flex-direction: column; gap: 1.5rem; }
+
+  /* ── RESULT CARD ── */
+  .result-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+    display: none;
+    animation: fadeUp 0.4s ease;
+  }
+
+  .result-card.show { display: block; }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .result-banner {
+    padding: 2rem;
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .result-banner.pass {
+    background: linear-gradient(135deg, rgba(0,229,176,0.12), rgba(0,184,255,0.08));
+    border-bottom: 1px solid rgba(0,229,176,0.2);
+  }
+
+  .result-banner.fail {
+    background: linear-gradient(135deg, rgba(255,77,109,0.12), rgba(255,182,39,0.06));
+    border-bottom: 1px solid rgba(255,77,109,0.2);
+  }
+
+  .result-icon {
+    width: 64px; height: 64px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 28px;
+    flex-shrink: 0;
+  }
+
+  .result-icon.pass { background: rgba(0,229,176,0.15); border: 2px solid rgba(0,229,176,0.4); }
+  .result-icon.fail { background: rgba(255,77,109,0.15); border: 2px solid rgba(255,77,109,0.4); }
+
+  .result-verdict {
+    font-family: var(--font-display);
+    font-size: 2.2rem;
+    letter-spacing: 3px;
+    line-height: 1;
+  }
+
+  .result-verdict.pass { color: var(--accent); }
+  .result-verdict.fail { color: var(--danger); }
+
+  .result-sub {
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 4px;
+    font-family: var(--font-mono);
+  }
+
+  .result-body { padding: 1.5rem; }
+
+  .conf-row {
+    display: flex; justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    font-size: 12px;
+  }
+
+  .conf-label { color: var(--muted); letter-spacing: 1px; text-transform: uppercase; }
+  .conf-pct { font-family: var(--font-mono); font-weight: 500; }
+  .conf-pct.pass { color: var(--accent); }
+  .conf-pct.fail { color: var(--danger); }
+
+  .conf-bar {
+    height: 6px;
+    background: var(--surface2);
+    border-radius: 99px;
+    overflow: hidden;
+    margin-bottom: 1.5rem;
+  }
+
+  .conf-fill {
+    height: 100%;
+    border-radius: 99px;
+    transition: width 0.8s cubic-bezier(0.34,1.56,0.64,1);
+    width: 0%;
+  }
+
+  .conf-fill.pass { background: linear-gradient(90deg, var(--accent), var(--accent2)); }
+  .conf-fill.fail { background: linear-gradient(90deg, var(--danger), var(--warn)); }
+
+  /* ── FACTOR BARS ── */
+  .factors-section { margin-top: 0.5rem; }
+
+  .fac-row { margin-bottom: 12px; }
+
+  .fac-top {
+    display: flex; justify-content: space-between;
+    font-size: 11px; margin-bottom: 5px;
+  }
+
+  .fac-name { color: var(--muted); letter-spacing: 0.5px; }
+  .fac-pct { font-family: var(--font-mono); color: var(--text); }
+
+  .fac-bar-bg { height: 4px; background: var(--surface2); border-radius: 99px; overflow: hidden; }
+
+  .fac-fill {
+    height: 100%;
+    border-radius: 99px;
+    transition: width 0.7s cubic-bezier(0.34,1.56,0.64,1) var(--delay, 0s);
+    width: 0%;
+  }
+
+  /* ── INFO CARD ── */
+  .info-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 1.5rem;
+  }
+
+  .info-title {
+    font-family: var(--font-display);
+    font-size: 1.1rem;
+    letter-spacing: 2px;
+    margin-bottom: 1rem;
+    color: var(--text);
+  }
+
+  .algo-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+  }
+
+  .algo-row:last-child { border: none; }
+  .algo-key { color: var(--muted); flex: 1; }
+  .algo-val { color: var(--accent); font-family: var(--font-mono); font-size: 12px; }
+
+  /* ── TIPS CARD ── */
+  .tips-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 1.5rem;
+    display: none;
+    animation: fadeUp 0.4s ease;
+  }
+
+  .tips-card.show { display: block; }
+
+  .tip-item {
+    display: flex; gap: 10px; align-items: flex-start;
+    margin-bottom: 12px;
+    font-size: 13px; line-height: 1.6;
+    color: var(--muted);
+  }
+
+  .tip-dot {
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    margin-top: 7px;
+    flex-shrink: 0;
+  }
+
+  /* ── HISTORY ── */
+  .history-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 1.5rem;
+    display: none;
+  }
+
+  .history-card.show { display: block; }
+
+  .hist-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+  }
+
+  .hist-item:last-child { border: none; }
+
+  .hist-badge {
+    padding: 3px 10px;
+    border-radius: 99px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 500;
+    flex-shrink: 0;
+  }
+
+  .hist-badge.pass { background: rgba(0,229,176,0.12); color: var(--accent); border: 1px solid rgba(0,229,176,0.25); }
+  .hist-badge.fail { background: rgba(255,77,109,0.12); color: var(--danger); border: 1px solid rgba(255,77,109,0.25); }
+
+  .hist-meta { flex: 1; color: var(--muted); font-size: 11px; }
+  .hist-conf { font-family: var(--font-mono); font-size: 11px; color: var(--muted); }
+
+  /* ── FOOTER ── */
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 1.5rem 2.5rem;
+    display: flex; align-items: center; justify-content: space-between;
+    position: relative; z-index: 1;
+  }
+
+  .footer-left { font-size: 12px; color: var(--muted); }
+  .footer-left strong { color: var(--accent); }
+
+  .algo-badge {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    padding: 4px 12px;
+    background: rgba(0,229,176,0.08);
+    border: 1px solid rgba(0,229,176,0.2);
+    border-radius: 99px;
+    color: var(--accent);
+  }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 900px) {
+    .hero { grid-template-columns: 1fr; }
+    .hero-visual { display: none; }
+    .main-wrap { grid-template-columns: 1fr; }
+    nav { padding: 1rem 1.25rem; }
+    .hero { padding: 3rem 1.25rem 2rem; }
+    .main-wrap { padding: 0 1.25rem 3rem; }
+    .field-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="glow-orb g1"></div>
+<div class="glow-orb g2"></div>
+
+<div class="page">
+
+  <!-- NAV -->
+  <nav>
+    <div class="nav-logo">
+      <div class="logo-mark">
+        <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+      </div>
+      <span class="logo-text">Smart Academic Analytics Platform</span>
+    </div>
+    <div class="nav-right">
+      <span class="nav-chip">DECISION TREE ML</span>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-left">
+      <div class="hero-eyebrow">
+        <div class="eyebrow-dot"></div>
+        Smart Academic Analytics Platform
+      </div>
+      <h1 class="hero-title">
+        <span class="line1">STUDENT</span>
+        <span class="line2">PERFORMANCE</span>
+        <span class="line3">PREDICTOR</span>
+      </h1>
+      <p class="hero-desc">
+        Machine learning–powered system that predicts whether a student will pass or fail using behavioral and academic features. Built on a Decision Tree classifier for transparent, interpretable results.
+      </p>
+      <div class="hero-stats">
+        <div class="stat-item">
+          <span class="stat-num">5</span>
+          <span class="stat-lbl">Features</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-num">DT</span>
+          <span class="stat-lbl">Algorithm</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-num">2</span>
+          <span class="stat-lbl">Classes</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="hero-visual">
+      <!-- Decision Tree SVG Illustration -->
+      <svg class="tree-svg" viewBox="0 0 380 280" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <!-- Root node -->
+        <rect x="130" y="10" width="120" height="42" rx="8" fill="rgba(0,229,176,0.12)" stroke="rgba(0,229,176,0.5)" stroke-width="1.5"/>
+        <text x="190" y="30" text-anchor="middle" fill="#00e5b0" font-family="DM Mono" font-size="10">Study Hours</text>
+        <text x="190" y="44" text-anchor="middle" fill="#6b7a96" font-family="DM Mono" font-size="9">&lt; 5h/week?</text>
+
+        <!-- L1 connectors -->
+        <line x1="160" y1="52" x2="90" y2="100" stroke="rgba(0,229,176,0.3)" stroke-width="1.5" stroke-dasharray="4,3"/>
+        <line x1="220" y1="52" x2="290" y2="100" stroke="rgba(0,229,176,0.3)" stroke-width="1.5" stroke-dasharray="4,3"/>
+
+        <text x="115" y="82" fill="#6b7a96" font-family="DM Mono" font-size="9">YES</text>
+        <text x="250" y="82" fill="#6b7a96" font-family="DM Mono" font-size="9">NO</text>
+
+        <!-- L1 left node -->
+        <rect x="30" y="100" width="120" height="42" rx="8" fill="rgba(0,184,255,0.1)" stroke="rgba(0,184,255,0.4)" stroke-width="1.5"/>
+        <text x="90" y="120" text-anchor="middle" fill="#00b8ff" font-family="DM Mono" font-size="10">Attendance</text>
+        <text x="90" y="134" text-anchor="middle" fill="#6b7a96" font-family="DM Mono" font-size="9">&lt; 70%?</text>
+
+        <!-- L1 right node -->
+        <rect x="230" y="100" width="120" height="42" rx="8" fill="rgba(0,184,255,0.1)" stroke="rgba(0,184,255,0.4)" stroke-width="1.5"/>
+        <text x="290" y="120" text-anchor="middle" fill="#00b8ff" font-family="DM Mono" font-size="10">Prev Marks</text>
+        <text x="290" y="134" text-anchor="middle" fill="#6b7a96" font-family="DM Mono" font-size="9">&lt; 50?</text>
+
+        <!-- L2 connectors -->
+        <line x1="60" y1="142" x2="40" y2="188" stroke="rgba(255,77,109,0.3)" stroke-width="1.5" stroke-dasharray="4,3"/>
+        <line x1="120" y1="142" x2="140" y2="188" stroke="rgba(0,229,176,0.3)" stroke-width="1.5" stroke-dasharray="4,3"/>
+        <line x1="260" y1="142" x2="230" y2="188" stroke="rgba(255,77,109,0.3)" stroke-width="1.5" stroke-dasharray="4,3"/>
+        <line x1="320" y1="142" x2="350" y2="188" stroke="rgba(0,229,176,0.3)" stroke-width="1.5" stroke-dasharray="4,3"/>
+
+        <!-- L2 leaves -->
+        <rect x="5" y="188" width="70" height="34" rx="8" fill="rgba(255,77,109,0.15)" stroke="rgba(255,77,109,0.5)" stroke-width="1.5"/>
+        <text x="40" y="209" text-anchor="middle" fill="#ff4d6d" font-family="Bebas Neue" font-size="14" letter-spacing="1">FAIL</text>
+
+        <rect x="105" y="188" width="70" height="34" rx="8" fill="rgba(0,229,176,0.12)" stroke="rgba(0,229,176,0.5)" stroke-width="1.5"/>
+        <text x="140" y="209" text-anchor="middle" fill="#00e5b0" font-family="Bebas Neue" font-size="14" letter-spacing="1">PASS</text>
+
+        <rect x="195" y="188" width="70" height="34" rx="8" fill="rgba(255,77,109,0.15)" stroke="rgba(255,77,109,0.5)" stroke-width="1.5"/>
+        <text x="230" y="209" text-anchor="middle" fill="#ff4d6d" font-family="Bebas Neue" font-size="14" letter-spacing="1">FAIL</text>
+
+        <rect x="315" y="188" width="60" height="34" rx="8" fill="rgba(0,229,176,0.12)" stroke="rgba(0,229,176,0.5)" stroke-width="1.5"/>
+        <text x="345" y="209" text-anchor="middle" fill="#00e5b0" font-family="Bebas Neue" font-size="14" letter-spacing="1">PASS</text>
+
+        <!-- Labels -->
+        <text x="20" y="181" fill="#6b7a96" font-family="DM Mono" font-size="8">YES</text>
+        <text x="125" y="181" fill="#6b7a96" font-family="DM Mono" font-size="8">NO</text>
+        <text x="210" y="181" fill="#6b7a96" font-family="DM Mono" font-size="8">YES</text>
+        <text x="340" y="181" fill="#6b7a96" font-family="DM Mono" font-size="8">NO</text>
+
+        <!-- Decorative dots -->
+        <circle cx="40" cy="250" r="3" fill="rgba(0,229,176,0.3)"/>
+        <circle cx="60" cy="255" r="2" fill="rgba(0,184,255,0.3)"/>
+        <circle cx="80" cy="248" r="4" fill="rgba(255,77,109,0.2)"/>
+        <circle cx="300" cy="253" r="3" fill="rgba(0,229,176,0.3)"/>
+        <circle cx="320" cy="258" r="2" fill="rgba(0,184,255,0.2)"/>
+        <circle cx="340" cy="250" r="4" fill="rgba(255,182,39,0.2)"/>
+      </svg>
+    </div>
+  </section>
+
+  <!-- MAIN -->
+  <div class="main-wrap">
+
+    <!-- INPUT FORM -->
+    <div>
+      <div class="section-head">
+        <span class="section-num">01</span>
+        <span class="section-title">STUDENT INPUT FEATURES</span>
+      </div>
+
+      <div class="input-card">
+        <div class="field-grid">
+
+          <div class="field">
+            <div class="field-label"><div class="lbl-icon"></div>Study Hours / Week</div>
+            <div class="input-row">
+              <div class="range-row">
+                <input type="range" class="range-input" id="studyHours" min="0" max="40" value="15" oninput="syncRange('studyHours','studyHoursVal','h')">
+                <span class="range-val" id="studyHoursVal">15h</span>
+              </div>
+              <div class="range-meta"><span>0h</span><span>40h</span></div>
+            </div>
+          </div>
+
+          <div class="field">
+            <div class="field-label"><div class="lbl-icon"></div>Attendance Rate</div>
+            <div class="input-row">
+              <div class="range-row">
+                <input type="range" class="range-input" id="attendance" min="0" max="100" value="80" oninput="syncRange('attendance','attendanceVal','%')">
+                <span class="range-val" id="attendanceVal">80%</span>
+              </div>
+              <div class="range-meta"><span>0%</span><span>100%</span></div>
+            </div>
+          </div>
+
+          <div class="field">
+            <div class="field-label"><div class="lbl-icon"></div>Previous Marks (out of 100)</div>
+            <div class="input-row">
+              <div class="range-row">
+                <input type="range" class="range-input" id="prevMarks" min="0" max="100" value="65" oninput="syncRange('prevMarks','prevMarksVal','')">
+                <span class="range-val" id="prevMarksVal">65</span>
+              </div>
+              <div class="range-meta"><span>0</span><span>100</span></div>
+            </div>
+          </div>
+
+          <div class="field">
+            <div class="field-label"><div class="lbl-icon"></div>Assignment Completion</div>
+            <div class="input-row">
+              <div class="range-row">
+                <input type="range" class="range-input" id="assignments" min="0" max="100" value="75" oninput="syncRange('assignments','assignmentsVal','%')">
+                <span class="range-val" id="assignmentsVal">75%</span>
+              </div>
+              <div class="range-meta"><span>0%</span><span>100%</span></div>
+            </div>
+          </div>
+
+          <div class="field full">
+            <div class="field-label"><div class="lbl-icon"></div>Sleep Duration / Night</div>
+            <div class="input-row">
+              <div class="range-row">
+                <input type="range" class="range-input" id="sleep" min="3" max="12" value="7" oninput="syncRange('sleep','sleepVal','h')">
+                <span class="range-val" id="sleepVal">7h</span>
+              </div>
+              <div class="range-meta"><span>3h</span><span>12h</span></div>
+            </div>
+          </div>
+
+        </div>
+
+        <button class="predict-btn" id="predictBtn" onclick="runPrediction()">
+          <span id="btnLabel">PREDICT PERFORMANCE</span>
+          <div class="btn-spinner" id="btnSpinner"></div>
+        </button>
+      </div>
+    </div>
+
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+
+      <!-- RESULT CARD -->
+      <div class="result-card" id="resultCard">
+        <div class="result-banner" id="resultBanner">
+          <div class="result-icon" id="resultIcon"></div>
+          <div>
+            <div class="result-verdict" id="resultVerdict"></div>
+            <div class="result-sub" id="resultSub"></div>
+          </div>
+        </div>
+        <div class="result-body">
+          <div class="conf-row">
+            <span class="conf-label">Confidence</span>
+            <span class="conf-pct" id="confPct"></span>
+          </div>
+          <div class="conf-bar">
+            <div class="conf-fill" id="confFill"></div>
+          </div>
+
+          <div class="factors-section">
+            <div style="font-size:11px; color:var(--muted); letter-spacing:1.5px; text-transform:uppercase; margin-bottom:12px;">Feature Impact</div>
+            <div id="factorBars"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TIPS CARD -->
+      <div class="tips-card" id="tipsCard">
+        <div class="info-title">💡 RECOMMENDATIONS</div>
+        <div id="tipsList"></div>
+      </div>
+
+      <!-- HISTORY -->
+      <div class="history-card" id="historyCard">
+        <div class="info-title" style="margin-bottom:1rem;">📋 PREDICTION LOG</div>
+        <div id="historyList"></div>
+      </div>
+
+      <!-- ALGO INFO -->
+      <div class="info-card">
+        <div class="info-title">⚙ MODEL INFO</div>
+        <div class="algo-row"><span class="algo-key">Algorithm</span><span class="algo-val">Decision Tree</span></div>
+        <div class="algo-row"><span class="algo-key">Task Type</span><span class="algo-val">Classification</span></div>
+        <div class="algo-row"><span class="algo-key">Output Classes</span><span class="algo-val">PASS / FAIL</span></div>
+        <div class="algo-row"><span class="algo-key">Features</span><span class="algo-val">5 Inputs</span></div>
+        <div class="algo-row"><span class="algo-key">Criterion</span><span class="algo-val">Gini Impurity</span></div>
+        <div class="algo-row"><span class="algo-key">Explainability</span><span class="algo-val">High</span></div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="footer-left">
+      Built for <strong>Hackathon 2025</strong> · Smart Student Performance Prediction using ML
+    </div>
+    <span class="algo-badge">sklearn · DecisionTreeClassifier</span>
+  </footer>
+
+</div>
+
+<script>
+  function syncRange(id, valId, suffix) {
+    const v = document.getElementById(id).value;
+    document.getElementById(valId).textContent = v + suffix;
+  }
+
+  let predictions = [];
+
+  function computeScore(study, attend, prevMarks, assign, sleep) {
+    let score = 0;
+    score += Math.min(study / 40, 1) * 30;
+    score += (attend / 100) * 28;
+    score += (prevMarks / 100) * 25;
+    score += (assign / 100) * 12;
+    const sleepScore = sleep >= 6 && sleep <= 9 ? 1 : sleep < 6 ? sleep / 6 : Math.max(0, (12 - sleep) / 3);
+    score += sleepScore * 5;
+    return Math.min(100, Math.max(10, score));
+  }
+
+  function getFactorImpacts(study, attend, prevMarks, assign, sleep) {
+    const sleepScore = sleep >= 6 && sleep <= 9 ? 1 : sleep < 6 ? sleep / 6 : Math.max(0, (12 - sleep) / 3);
+    return [
+      { name: 'Previous Marks', val: Math.round(prevMarks), color: '#00e5b0' },
+      { name: 'Attendance', val: attend, color: '#00b8ff' },
+      { name: 'Study Hours', val: Math.round(Math.min(study / 40, 1) * 100), color: '#7c6fff' },
+      { name: 'Assignments', val: assign, color: '#ffb627' },
+      { name: 'Sleep Quality', val: Math.round(sleepScore * 100), color: '#ff7eb3' },
+    ];
+  }
+
+  function getTips(study, attend, prevMarks, assign, sleep, passed) {
+    const tips = [];
+    if (study < 10) tips.push({ color: '#ff4d6d', text: 'Study time is critically low. Target at least 15–20 hours per week with structured sessions.' });
+    if (attend < 75) tips.push({ color: '#ff4d6d', text: 'Attendance below 75% seriously hinders learning continuity. Prioritize attending all scheduled classes.' });
+    if (prevMarks < 50) tips.push({ color: '#ffb627', text: 'Previous marks indicate knowledge gaps. Seek tutoring or revisit foundational topics.' });
+    if (assign < 70) tips.push({ color: '#ffb627', text: 'Assignment completion below 70% affects conceptual understanding. Submit all work on time.' });
+    if (sleep < 6) tips.push({ color: '#ffb627', text: 'Less than 6 hours of sleep impairs memory retention. Aim for 7–9 hours nightly.' });
+    if (passed && tips.length === 0) tips.push({ color: '#00e5b0', text: 'Excellent profile! Consider mentoring peers or taking advanced modules to stay challenged.' });
+    if (passed) tips.push({ color: '#00e5b0', text: 'Maintain consistency across all five dimensions to sustain and improve your performance.' });
+    return tips;
+  }
+
+  async function runPrediction() {
+    const btn = document.getElementById('predictBtn');
+    btn.disabled = true;
+    document.getElementById('btnLabel').textContent = 'ANALYZING...';
+    document.getElementById('btnSpinner').style.display = 'block';
+
+    const study = +document.getElementById('studyHours').value;
+    const attend = +document.getElementById('attendance').value;
+    const prevMarks = +document.getElementById('prevMarks').value;
+    const assign = +document.getElementById('assignments').value;
+    const sleep = +document.getElementById('sleep').value;
+
+    try {
+      const response = await fetch('/predict', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          study_hours: study,
+          attendance: attend,
+          prev_marks: prevMarks,
+          assignments: assign,
+          sleep: sleep,
+        }),
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || JSON.stringify(data));
+      }
+
+      const passed = data.passed;
+      const conf = Math.round(data.confidence);
+      const resultCard = document.getElementById('resultCard');
+      const banner = document.getElementById('resultBanner');
+      const icon = document.getElementById('resultIcon');
+      const verdict = document.getElementById('resultVerdict');
+      const sub = document.getElementById('resultSub');
+      const confPct = document.getElementById('confPct');
+      const confFill = document.getElementById('confFill');
+
+      resultCard.className = 'result-card show';
+      if (passed) {
+        banner.className = 'result-banner pass';
+        icon.className = 'result-icon pass';
+        icon.textContent = '✓';
+        verdict.className = 'result-verdict pass';
+        verdict.textContent = data.prediction;
+        sub.textContent = 'Student likely to pass · Model: Decision Tree';
+        confPct.className = 'conf-pct pass';
+        confFill.className = 'conf-fill pass';
+      } else {
+        banner.className = 'result-banner fail';
+        icon.className = 'result-icon fail';
+        icon.textContent = '✕';
+        verdict.className = 'result-verdict fail';
+        verdict.textContent = data.prediction;
+        sub.textContent = 'Student at risk of failing · Intervention needed';
+        confPct.className = 'conf-pct fail';
+        confFill.className = 'conf-fill fail';
+      }
+
+      confPct.textContent = conf + '%';
+      setTimeout(() => { confFill.style.width = conf + '%'; }, 80);
+
+      const fb = document.getElementById('factorBars');
+      fb.innerHTML = '';
+      data.feature_impact.forEach((f, i) => {
+        const value = Math.round(f.value);
+        const d = document.createElement('div');
+        d.className = 'fac-row';
+        d.innerHTML = `
+          <div class="fac-top">
+            <span class="fac-name">${f.name}</span>
+            <span class="fac-pct">${value}%</span>
+          </div>
+          <div class="fac-bar-bg">
+            <div class="fac-fill" id="ff${i}" style="background:${f.color}; --delay:${i * 0.08}s"></div>
+          </div>`;
+        fb.appendChild(d);
+      });
+      setTimeout(() => {
+        data.feature_impact.forEach((f, i) => {
+          const el = document.getElementById('ff' + i);
+          if (el) el.style.width = Math.round(f.value) + '%';
+        });
+      }, 100);
+
+      const tipsCard = document.getElementById('tipsCard');
+      const tl = document.getElementById('tipsList');
+      tl.innerHTML = '';
+      data.recommendations.forEach(t => {
+        const d = document.createElement('div');
+        d.className = 'tip-item';
+        d.innerHTML = `<div class="tip-dot" style="background:${t.color}"></div><span>${t.text}</span>`;
+        tl.appendChild(d);
+      });
+      tipsCard.className = 'tips-card show';
+
+      predictions.unshift({ passed, conf, study, attend, prevMarks, assign });
+      if (predictions.length > 6) predictions = predictions.slice(0, 6);
+      const historyCard = document.getElementById('historyCard');
+      const hl = document.getElementById('historyList');
+      hl.innerHTML = '';
+      predictions.forEach((p, i) => {
+        const d = document.createElement('div');
+        d.className = 'hist-item';
+        d.innerHTML = `
+          <span class="hist-badge ${p.passed ? 'pass' : 'fail'}">${p.passed ? 'PASS' : 'FAIL'}</span>
+          <span class="hist-meta">Marks:${p.prevMarks} · Study:${p.study}h · Att:${p.attend}%</span>
+          <span class="hist-conf">${p.conf}%</span>`;
+        hl.appendChild(d);
+      });
+      historyCard.className = 'history-card show';
+    } catch (error) {
+      alert('Prediction failed: ' + error.message);
+    } finally {
+      btn.disabled = false;
+      document.getElementById('btnLabel').textContent = 'PREDICT AGAIN';
+      document.getElementById('btnSpinner').style.display = 'none';
+    }
+  }
+</script>
+</body>
+</html>
